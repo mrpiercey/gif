@@ -17,6 +17,10 @@ function App() {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const hardGRef = useRef<HTMLButtonElement>(null);
   const softGRef = useRef<HTMLButtonElement>(null);
+  
+  // Audio refs for sound effects
+  const bellSoundRef = useRef<HTMLAudioElement>(null);
+  const buzzerSoundRef = useRef<HTMLAudioElement>(null);
 
   const passiveAggressiveMessages = [
     "Ohh... so close! 🙄",
@@ -82,6 +86,21 @@ function App() {
     "Steve Wilhite retired from his career having created one of the most important image formats in internet history - the least we can do is say it right!"
   ];
 
+  // Sound effect functions
+  const playBellSound = () => {
+    if (bellSoundRef.current) {
+      bellSoundRef.current.currentTime = 0; // Reset to start
+      bellSoundRef.current.play().catch(e => console.log('Bell sound failed to play:', e));
+    }
+  };
+
+  const playBuzzerSound = () => {
+    if (buzzerSoundRef.current) {
+      buzzerSoundRef.current.currentTime = 0; // Reset to start
+      buzzerSoundRef.current.play().catch(e => console.log('Buzzer sound failed to play:', e));
+    }
+  };
+
   // Check if two rectangles overlap
   const checkOverlap = (rect1: DOMRect, rect2: DOMRect) => {
     return !(rect1.right < rect2.left || 
@@ -138,6 +157,9 @@ function App() {
   const moveHardGButton = () => {
     if (showCorrect || showReasons || isHardGAnimating) return;
     
+    // Play buzzer sound when button moves
+    playBuzzerSound();
+    
     setIsHardGAnimating(true);
     
     if (!hasMovedOnce) {
@@ -159,6 +181,9 @@ function App() {
   };
 
   const handleSoftGClick = () => {
+    // Play delightful bell sound
+    playBellSound();
+    
     // Select a random fun fact
     const randomFact = funFacts[Math.floor(Math.random() * funFacts.length)];
     setCurrentFunFact(randomFact);
@@ -290,6 +315,19 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
+      {/* Hidden Audio Elements */}
+      <audio ref={bellSoundRef} preload="auto">
+        <source src="/sounds/bell.mp3" type="audio/mpeg" />
+        <source src="/sounds/bell.wav" type="audio/wav" />
+        {/* Fallback for browsers that don't support audio */}
+      </audio>
+      
+      <audio ref={buzzerSoundRef} preload="auto">
+        <source src="/sounds/buzzer.mp3" type="audio/mpeg" />
+        <source src="/sounds/buzzer.wav" type="audio/wav" />
+        {/* Fallback for browsers that don't support audio */}
+      </audio>
+
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-10 left-10 w-20 h-20 bg-blue-500 rounded-full animate-pulse"></div>
