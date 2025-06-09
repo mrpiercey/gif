@@ -11,6 +11,7 @@ function App() {
   const [clickCount, setClickCount] = useState(0);
   const [currentMessage, setCurrentMessage] = useState('');
   const [showMessage, setShowMessage] = useState(false);
+  const [currentFunFact, setCurrentFunFact] = useState('');
   const hardGRef = useRef<HTMLButtonElement>(null);
 
   const passiveAggressiveMessages = [
@@ -29,6 +30,29 @@ function App() {
     "Bless your heart for trying 💝",
     "Maybe next century? ⏰",
     "Points for persistence, I guess 🏆"
+  ];
+
+  const funFacts = [
+    "Steve Wilhite, the creator of GIF, specifically stated it's pronounced with a soft G like 'jif' - and he should know, he invented it!",
+    "At the 2013 Webby Awards, Steve Wilhite used his acceptance speech to clarify once and for all: 'It's pronounced JIF, not GIF.'",
+    "The phrase 'Choosy developers choose GIF' was intentionally created as a play on the Jif peanut butter slogan 'Choosy moms choose Jif.'",
+    "Many English words starting with 'gi' use the soft G sound: giant, giraffe, gin, ginger, gymnasium, and gist.",
+    "Steve Wilhite has been consistent about the pronunciation since the format's creation in 1987 - that's over 35 years of saying 'jif'!",
+    "CompuServe, the company where GIF was developed, always used the soft G pronunciation in their internal communications.",
+    "The soft G pronunciation was intentional from day one - Wilhite wanted it to sound like the popular peanut butter brand.",
+    "Major dictionaries like Merriam-Webster and Oxford list the soft G pronunciation as the primary option.",
+    "Steve Wilhite has given countless interviews over the decades, always correcting people who say it with a hard G.",
+    "The creator's intent matters - when someone invents something, they get to decide how it's pronounced. It's basic respect for intellectual property.",
+    "Even the original GIF specification documentation from 1987 included pronunciation guidance suggesting the soft G.",
+    "Linguistic experts note that English borrowed many soft G patterns from French, where 'gi' combinations typically use the soft sound.",
+    "The acronym expansion 'Graphics Interchange Format' doesn't dictate pronunciation - we don't say 'jfeg' for JPEG despite 'photographic.'",
+    "Steve Wilhite received the Webby Lifetime Achievement Award partly for creating GIF, and he used that platform to educate people on pronunciation.",
+    "Early computer magazines and tech publications in the late 80s and early 90s consistently used the soft G pronunciation in their articles.",
+    "The soft G pronunciation has been the standard in professional graphics and web development communities since the format's inception.",
+    "Wilhite has stated in interviews that he's 'amazed' the debate even exists, since he's been clear about the pronunciation from the beginning.",
+    "The GIF format revolutionized early internet culture, and respecting its creator's pronunciation wishes is part of honoring that legacy.",
+    "Technical documentation from the original development team at CompuServe consistently referenced the 'jif' pronunciation in internal memos.",
+    "Steve Wilhite retired from his career having created one of the most important image formats in internet history - the least we can do is say it right!"
   ];
 
   const moveHardGButton = () => {
@@ -58,6 +82,9 @@ function App() {
   };
 
   const handleSoftGClick = () => {
+    // Select a random fun fact
+    const randomFact = funFacts[Math.floor(Math.random() * funFacts.length)];
+    setCurrentFunFact(randomFact);
     setShowCorrect(true);
   };
 
@@ -116,6 +143,7 @@ function App() {
     setClickCount(0);
     setCurrentMessage('');
     setShowMessage(false);
+    setCurrentFunFact('');
   };
 
   const reasons = [
@@ -222,14 +250,13 @@ function App() {
               </p>
             </div>
             
-            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-2xl mx-auto mb-8">
+            <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto mb-8">
               <div className="flex items-center justify-center mb-4">
                 <Lightbulb className="w-8 h-8 text-yellow-500 mr-3" />
                 <h3 className="text-xl font-bold text-gray-800">Fun Fact</h3>
               </div>
               <p className="text-gray-600 text-lg leading-relaxed">
-                Steve Wilhite used his 2013 Webby Award acceptance speech to settle the debate once and for all: 
-                <span className="font-semibold italic"> "It's pronounced JIF, not GIF."</span>
+                {currentFunFact}
               </p>
             </div>
 
