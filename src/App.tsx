@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Volume2, CheckCircle, Lightbulb } from 'lucide-react';
 
 function App() {
@@ -12,7 +12,11 @@ function App() {
   const [currentMessage, setCurrentMessage] = useState('');
   const [showMessage, setShowMessage] = useState(false);
   const [currentFunFact, setCurrentFunFact] = useState('');
+  const [softGScale, setSoftGScale] = useState(1);
+  const [showCursor, setShowCursor] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const hardGRef = useRef<HTMLButtonElement>(null);
+  const softGRef = useRef<HTMLButtonElement>(null);
 
   const passiveAggressiveMessages = [
     "Ohh... so close! 🙄",
@@ -30,6 +34,29 @@ function App() {
     "Bless your heart for trying 💝",
     "Maybe next century? ⏰",
     "Points for persistence, I guess 🏆"
+  ];
+
+  const hintMessages = [
+    "Why don't you try clicking the right answer?",
+    "Maybe the other button would work better? 🤔",
+    "Psst... there's another option over there 👉",
+    "Have you considered the green button? 💚",
+    "The correct answer is literally right there...",
+    "I'm starting to feel bad for you 😅",
+    "The soft G button is looking pretty lonely...",
+    "Your persistence is admirable, but misguided 🎯",
+    "Perhaps it's time to try a different strategy?",
+    "The definition of insanity is... well, this 🤪",
+    "I believe in you! Try the other button! 💪",
+    "Plot twist: maybe try the correct answer?",
+    "The green button has been waiting patiently...",
+    "Hint: Steve Wilhite would be disappointed 😔",
+    "Maybe listen to the creator of the format? 🤷‍♀️",
+    "The soft G button is the friend you need 🤝",
+    "I'm rooting for you to make the right choice!",
+    "Time to swallow your pride and click correctly?",
+    "The universe is trying to tell you something...",
+    "Your stubbornness is both impressive and concerning 😂"
   ];
 
   const funFacts = [
@@ -55,27 +82,77 @@ function App() {
     "Steve Wilhite retired from his career having created one of the most important image formats in internet history - the least we can do is say it right!"
   ];
 
+  // Check if two rectangles overlap
+  const checkOverlap = (rect1: DOMRect, rect2: DOMRect) => {
+    return !(rect1.right < rect2.left || 
+             rect1.left > rect2.right || 
+             rect1.bottom < rect2.top || 
+             rect1.top > rect2.bottom);
+  };
+
+  // Get a safe position that doesn't overlap with the soft G button
+  const getSafePosition = () => {
+    const maxAttempts = 50;
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      const newX = Math.random() * (window.innerWidth - 200);
+      const newY = Math.random() * (window.innerHeight - 100);
+      
+      // Create a test rectangle for the new position
+      const testRect = {
+        left: newX,
+        top: newY,
+        right: newX + 200, // Approximate button width
+        bottom: newY + 100 // Approximate button height
+      } as DOMRect;
+      
+      // Get soft G button position
+      const softGButton = softGRef.current;
+      if (softGButton) {
+        const softGRect = softGButton.getBoundingClientRect();
+        
+        // Add some padding to avoid being too close
+        const paddedSoftGRect = {
+          left: softGRect.left - 50,
+          top: softGRect.top - 50,
+          right: softGRect.right + 50,
+          bottom: softGRect.bottom + 50
+        } as DOMRect;
+        
+        if (!checkOverlap(testRect, paddedSoftGRect)) {
+          return { x: newX, y: newY };
+        }
+      } else {
+        // If soft G button not found, just return the position
+        return { x: newX, y: newY };
+      }
+      
+      attempts++;
+    }
+    
+    // Fallback: place it at the top right corner
+    return { x: window.innerWidth - 250, y: 50 };
+  };
+
   const moveHardGButton = () => {
     if (showCorrect || showReasons || isHardGAnimating) return;
     
     setIsHardGAnimating(true);
     
     if (!hasMovedOnce) {
-      // First time: shrink and move to opposite side
-      setHardGScale(0.5); // Shrink to half size
+      // First time: shrink and move to safe position
+      setHardGScale(0.5);
       setHasMovedOnce(true);
       
-      // Move to opposite side of screen
-      const newX = Math.random() * (window.innerWidth - 100);
-      const newY = Math.random() * (window.innerHeight - 50);
-      setHardGPosition({ x: newX, y: newY });
+      const safePosition = getSafePosition();
+      setHardGPosition(safePosition);
       
       setTimeout(() => setIsHardGAnimating(false), 300);
     } else {
-      // After first time: just slide around quickly
-      const newX = Math.random() * (window.innerWidth - 100);
-      const newY = Math.random() * (window.innerHeight - 50);
-      setHardGPosition({ x: newX, y: newY });
+      // After first time: just slide around quickly to safe positions
+      const safePosition = getSafePosition();
+      setHardGPosition(safePosition);
       
       setTimeout(() => setIsHardGAnimating(false), 150);
     }
@@ -90,13 +167,63 @@ function App() {
 
   const handleHardGClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    setClickCount(prev => prev + 1);
+    const newClickCount = clickCount + 1;
+    setClickCount(newClickCount);
+    
+    // Show hint messages after 50 clicks
+    if (newClickCount >= 50 && newClickCount < 150) {
+      const randomHint = hintMessages[Math.floor(Math.random() * hintMessages.length)];
+      setCurrentMessage(randomHint);
+      setShowMessage(true);
+      setTimeout(() => setShowMessage(false), 3000);
+    }
+    
+    // Triple the soft G button size after 100 clicks
+    if (newClickCount === 100) {
+      setSoftGScale(3);
+    }
+    
+    // Auto-click the soft G button after 150 clicks
+    if (newClickCount === 150) {
+      setShowCursor(true);
+      
+      // Get the soft G button position
+      const softGButton = softGRef.current;
+      if (softGButton) {
+        const rect = softGButton.getBoundingClientRect();
+        const targetX = rect.left + rect.width / 2;
+        const targetY = rect.top + rect.height / 2;
+        
+        // Start cursor from a random edge of the screen
+        const startPositions = [
+          { x: 0, y: window.innerHeight / 2 }, // Left edge
+          { x: window.innerWidth, y: window.innerHeight / 2 }, // Right edge
+          { x: window.innerWidth / 2, y: 0 }, // Top edge
+          { x: window.innerWidth / 2, y: window.innerHeight } // Bottom edge
+        ];
+        
+        const startPos = startPositions[Math.floor(Math.random() * startPositions.length)];
+        setCursorPosition(startPos);
+        
+        // Animate cursor to the soft G button
+        setTimeout(() => {
+          setCursorPosition({ x: targetX, y: targetY });
+          
+          // Click the button after cursor reaches it
+          setTimeout(() => {
+            setShowCursor(false);
+            handleSoftGClick();
+          }, 1500);
+        }, 100);
+      }
+      return;
+    }
     
     // 7 out of 8 clicks (87.5% chance) make it vanish and reappear
     const shouldVanish = Math.random() < 0.875;
     
-    if (shouldVanish) {
-      // Show a random passive-aggressive message
+    if (shouldVanish && newClickCount < 50) {
+      // Show a random passive-aggressive message (only before hint phase)
       const randomMessage = passiveAggressiveMessages[Math.floor(Math.random() * passiveAggressiveMessages.length)];
       setCurrentMessage(randomMessage);
       setShowMessage(true);
@@ -115,10 +242,9 @@ function App() {
       }
       
       setTimeout(() => {
-        // Reappear at new location
-        const newX = Math.random() * (window.innerWidth - 100);
-        const newY = Math.random() * (window.innerHeight - 50);
-        setHardGPosition({ x: newX, y: newY });
+        // Reappear at safe location
+        const safePosition = getSafePosition();
+        setHardGPosition(safePosition);
         
         if (button) {
           button.style.opacity = '1';
@@ -127,8 +253,8 @@ function App() {
         
         setTimeout(() => setIsHardGAnimating(false), 100);
       }, 200);
-    } else {
-      // 1 out of 8 clicks actually work
+    } else if (newClickCount < 50) {
+      // 1 out of 8 clicks actually work (only before hint phase)
       setShowReasons(true);
     }
   };
@@ -144,6 +270,9 @@ function App() {
     setCurrentMessage('');
     setShowMessage(false);
     setCurrentFunFact('');
+    setSoftGScale(1);
+    setShowCursor(false);
+    setCursorPosition({ x: 0, y: 0 });
   };
 
   const reasons = [
@@ -169,10 +298,25 @@ function App() {
         <div className="absolute bottom-40 right-1/3 w-8 h-8 bg-blue-400 rounded-full animate-pulse"></div>
       </div>
 
-      {/* Passive-Aggressive Message */}
+      {/* Animated Cursor */}
+      {showCursor && (
+        <div 
+          className="fixed w-6 h-6 pointer-events-none z-50 transition-all duration-1500 ease-in-out"
+          style={{
+            left: `${cursorPosition.x - 12}px`,
+            top: `${cursorPosition.y - 12}px`,
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" fill="black" stroke="white" strokeWidth="1"/>
+          </svg>
+        </div>
+      )}
+
+      {/* Messages */}
       {showMessage && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-          <div className="bg-gradient-to-r from-orange-400 to-red-500 text-white px-6 py-3 rounded-full shadow-2xl border-2 border-white">
+          <div className={`${clickCount >= 50 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'} text-white px-6 py-3 rounded-full shadow-2xl border-2 border-white`}>
             <p className="text-lg font-bold text-center">{currentMessage}</p>
           </div>
         </div>
@@ -198,8 +342,14 @@ function App() {
             <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center justify-center w-full max-w-3xl">
               {/* Soft G Button */}
               <button
+                ref={softGRef}
                 onClick={handleSoftGClick}
                 className="group relative bg-white hover:bg-green-50 border-2 border-green-200 hover:border-green-400 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full max-w-xs touch-manipulation"
+                style={{
+                  transform: `scale(${softGScale}) ${softGScale > 1 ? 'translateY(-20px)' : ''}`,
+                  zIndex: softGScale > 1 ? 30 : 'auto',
+                  transition: 'all 0.5s ease-out'
+                }}
               >
                 <div className="flex items-center justify-center mb-3">
                   <Volume2 className="w-8 h-8 text-green-600 group-hover:animate-bounce" />
