@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Volume2, CheckCircle, Lightbulb } from 'lucide-react';
 
 function App() {
@@ -13,11 +13,9 @@ function App() {
   const [showMessage, setShowMessage] = useState(false);
   const [currentFunFact, setCurrentFunFact] = useState('');
   const [softGScale, setSoftGScale] = useState(1);
-  const [showCursor, setShowCursor] = useState(false);
-  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [hardGHidden, setHardGHidden] = useState(false);
   const hardGRef = useRef<HTMLButtonElement>(null);
   const softGRef = useRef<HTMLButtonElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Audio refs for sound effects
   const bellSoundRef = useRef<HTMLAudioElement>(null);
@@ -86,57 +84,6 @@ function App() {
     "Technical documentation from the original development team at CompuServe consistently referenced the 'jif' pronunciation in internal memos.",
     "Steve Wilhite retired from his career having created one of the most important image formats in internet history - the least we can do is say it right!"
   ];
-
-  // Set up 2-minute timer when component mounts and isn't showing results
-  useEffect(() => {
-    if (!showCorrect && !showReasons) {
-      // Clear any existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      // Set 2-minute timeout
-      timeoutRef.current = setTimeout(() => {
-        triggerAutoCursor();
-      }, 120000); // 2 minutes = 120,000 milliseconds
-    }
-    
-    // Cleanup timeout on unmount or when showing results
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [showCorrect, showReasons]);
-
-  const triggerAutoCursor = () => {
-    if (showCorrect || showReasons) return;
-    
-    setShowCursor(true);
-    
-    // Get the soft G button position
-    const softGButton = softGRef.current;
-    if (softGButton) {
-      const rect = softGButton.getBoundingClientRect();
-      const targetX = rect.left + rect.width / 2;
-      const targetY = rect.top + rect.height / 2;
-      
-      // Always start cursor from the left edge
-      const startPos = { x: 0, y: window.innerHeight / 2 };
-      setCursorPosition(startPos);
-      
-      // Animate cursor to the soft G button
-      setTimeout(() => {
-        setCursorPosition({ x: targetX, y: targetY });
-        
-        // Click the button after cursor reaches it
-        setTimeout(() => {
-          setShowCursor(false);
-          handleSoftGClick();
-        }, 6000);
-      }, 100);
-    }
-  };
 
   // Sound effect functions
   const playBellSound = () => {
@@ -207,7 +154,7 @@ function App() {
   };
 
   const moveHardGButton = () => {
-    if (showCorrect || showReasons || isHardGAnimating) return;
+    if (showCorrect || showReasons || isHardGAnimating || hardGHidden) return;
     
     // Play buzzer sound when button moves
     playBuzzerSound();
@@ -233,11 +180,6 @@ function App() {
   };
 
   const handleSoftGClick = () => {
-    // Clear the 2-minute timeout since they clicked the correct answer
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
     // Play delightful bell sound
     playBellSound();
     
@@ -252,8 +194,17 @@ function App() {
     const newClickCount = clickCount + 1;
     setClickCount(newClickCount);
     
+    // Hide hard G button after 20 clicks
+    if (newClickCount >= 20) {
+      setHardGHidden(true);
+      setCurrentMessage("Fine! You can only click the correct answer now! 😤");
+      setShowMessage(true);
+      setTimeout(() => setShowMessage(false), 4000);
+      return;
+    }
+    
     // Show hint messages after 5 clicks
-    if (newClickCount >= 5 && newClickCount < 20) {
+    if (newClickCount >= 5) {
       const randomHint = hintMessages[Math.floor(Math.random() * hintMessages.length)];
       setCurrentMessage(randomHint);
       setShowMessage(true);
@@ -263,12 +214,6 @@ function App() {
     // Triple the soft G button size after 10 clicks
     if (newClickCount === 10) {
       setSoftGScale(3);
-    }
-    
-    // Auto-click the soft G button after 20 clicks
-    if (newClickCount === 20) {
-      triggerAutoCursor();
-      return;
     }
     
     // 19 out of 20 clicks (95% chance) make it vanish and reappear
@@ -312,11 +257,6 @@ function App() {
   };
 
   const resetApp = () => {
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
     setShowCorrect(false);
     setShowReasons(false);
     setHardGPosition({ x: 0, y: 0 });
@@ -328,8 +268,7 @@ function App() {
     setShowMessage(false);
     setCurrentFunFact('');
     setSoftGScale(1);
-    setShowCursor(false);
-    setCursorPosition({ x: 0, y: 0 });
+    setHardGHidden(false);
   };
 
   const reasons = [
@@ -367,21 +306,6 @@ function App() {
         <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-indigo-500 rounded-full animate-ping"></div>
         <div className="absolute bottom-40 right-1/3 w-8 h-8 bg-blue-400 rounded-full animate-pulse"></div>
       </div>
-
-      {/* Animated Cursor */}
-      {showCursor && (
-        <div 
-          className="fixed w-6 h-6 pointer-events-none z-50 transition-all duration-6000 ease-in-out"
-          style={{
-            left: `${cursorPosition.x - 12}px`,
-            top: `${cursorPosition.y - 12}px`,
-          }}
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
-            <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" fill="black" stroke="white" strokeWidth="1"/>
-          </svg>
-        </div>
-      )}
 
       {/* Messages */}
       {showMessage && (
@@ -431,30 +355,44 @@ function App() {
                 <div className="absolute inset-0 bg-gradient-to-r from-green-200 to-emerald-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
               </button>
 
-              {/* Hard G Button */}
-              <button
-                ref={hardGRef}
-                onMouseEnter={moveHardGButton}
-                onTouchStart={moveHardGButton}
-                onClick={handleHardGClick}
-                className="group relative bg-white hover:bg-red-50 border-2 border-red-200 hover:border-red-400 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-200 transform hover:scale-105 w-full max-w-xs touch-manipulation"
-                style={{
-                  position: hardGPosition.x !== 0 || hardGPosition.y !== 0 ? 'fixed' : 'relative',
-                  left: hardGPosition.x !== 0 ? `${hardGPosition.x}px` : 'auto',
-                  top: hardGPosition.y !== 0 ? `${hardGPosition.y}px` : 'auto',
-                  zIndex: hardGPosition.x !== 0 || hardGPosition.y !== 0 ? 20 : 'auto',
-                  transform: `scale(${hardGScale})`,
-                  transition: isHardGAnimating ? 'all 0.2s ease-out' : 'all 0.2s ease'
-                }}
-              >
-                <div className="flex items-center justify-center mb-3">
-                  <Volume2 className="w-8 h-8 text-red-600 group-hover:animate-bounce" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">with a Hard G</h3>
-                <p className="text-gray-600 text-base">(like "Gig")</p>
-                <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
-              </button>
+              {/* Hard G Button - Hidden after 20 clicks */}
+              {!hardGHidden && (
+                <button
+                  ref={hardGRef}
+                  onMouseEnter={moveHardGButton}
+                  onTouchStart={moveHardGButton}
+                  onClick={handleHardGClick}
+                  className="group relative bg-white hover:bg-red-50 border-2 border-red-200 hover:border-red-400 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-200 transform hover:scale-105 w-full max-w-xs touch-manipulation"
+                  style={{
+                    position: hardGPosition.x !== 0 || hardGPosition.y !== 0 ? 'fixed' : 'relative',
+                    left: hardGPosition.x !== 0 ? `${hardGPosition.x}px` : 'auto',
+                    top: hardGPosition.y !== 0 ? `${hardGPosition.y}px` : 'auto',
+                    zIndex: hardGPosition.x !== 0 || hardGPosition.y !== 0 ? 20 : 'auto',
+                    transform: `scale(${hardGScale})`,
+                    transition: isHardGAnimating ? 'all 0.2s ease-out' : 'all 0.2s ease'
+                  }}
+                >
+                  <div className="flex items-center justify-center mb-3">
+                    <Volume2 className="w-8 h-8 text-red-600 group-hover:animate-bounce" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">with a Hard G</h3>
+                  <p className="text-gray-600 text-base">(like "Gig")</p>
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
+                </button>
+              )}
             </div>
+
+            {/* Message when hard G is hidden */}
+            {hardGHidden && (
+              <div className="mt-8 text-center animate-fade-in">
+                <p className="text-lg text-gray-600 mb-4">
+                  You've run out of wrong options! 🎯
+                </p>
+                <p className="text-base text-gray-500">
+                  Time to click the correct answer above ⬆️
+                </p>
+              </div>
+            )}
           </>
         )}
 
