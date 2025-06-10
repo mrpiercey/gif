@@ -393,7 +393,9 @@ function App() {
                   <Volume2 className="w-8 h-8 text-green-600 group-hover:animate-bounce" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">with a Soft G</h3>
-                <p className="text-gray-600 text-base">(like "Jif")</p>
+                <p className="text-gray-600 text-base">
+                  {hasMovedOnce ? '(like "GIF")' : '(like "Jif")'}
+                </p>
                 <div className="absolute inset-0 bg-gradient-to-r from-green-200 to-emerald-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
               </button>
 
@@ -417,7 +419,7 @@ function App() {
                   <Volume2 className="w-8 h-8 text-red-600 group-hover:animate-bounce" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">with a Hard G</h3>
-                <p className="text-gray-600 text-base">(like "Gift")</p>
+                <p className="text-gray-600 text-base">(like "Gig")</p>
                 <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
               </button>
             </div>
