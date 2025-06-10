@@ -18,9 +18,11 @@ function App() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [softGPosition, setSoftGPosition] = useState({ x: 0, y: 0 });
   const [isSoftGChasing, setIsSoftGChasing] = useState(false);
+  const [isHardGFading, setIsHardGFading] = useState(false);
   const hardGRef = useRef<HTMLButtonElement>(null);
   const softGRef = useRef<HTMLButtonElement>(null);
   const chaseIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const messageIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Audio refs for sound effects
   const bellSoundRef = useRef<HTMLAudioElement>(null);
@@ -65,6 +67,20 @@ function App() {
     "Time to swallow your pride and click correctly?",
     "The universe is trying to tell you something...",
     "Your stubbornness is both impressive and concerning 😂"
+  ];
+
+  const chaseMessages = [
+    "You can run, but you can't hide from the truth! 🏃‍♂️",
+    "The correct answer will find you eventually! 🎯",
+    "Running away won't change the facts! 💨",
+    "Steve Wilhite is watching... and judging 👀",
+    "The truth is literally chasing you right now! 🏃‍♀️",
+    "Your cursor can't escape destiny! ✨",
+    "Resistance is futile - just click it! 🤖",
+    "The soft G will never give up on you! 💚",
+    "This is what happens when you ignore facts! 📚",
+    "The pronunciation police are on patrol! 🚔",
+    "You're being hunted by linguistic accuracy! 🎭"
   ];
 
   const funFacts = [
@@ -137,6 +153,24 @@ function App() {
     };
   }, [isSoftGChasing, mousePosition, showCorrect, showReasons]);
 
+  // Periodic chase messages
+  useEffect(() => {
+    if (isSoftGChasing && !showCorrect && !showReasons) {
+      messageIntervalRef.current = setInterval(() => {
+        const randomMessage = chaseMessages[Math.floor(Math.random() * chaseMessages.length)];
+        setCurrentMessage(randomMessage);
+        setShowMessage(true);
+        setTimeout(() => setShowMessage(false), 4000);
+      }, 10000); // Show message every 10 seconds
+    }
+
+    return () => {
+      if (messageIntervalRef.current) {
+        clearInterval(messageIntervalRef.current);
+      }
+    };
+  }, [isSoftGChasing, showCorrect, showReasons]);
+
   // Sound effect functions
   const playBellSound = () => {
     if (bellSoundRef.current) {
@@ -206,7 +240,7 @@ function App() {
   };
 
   const moveHardGButton = () => {
-    if (showCorrect || showReasons || isHardGAnimating || hardGHidden) return;
+    if (showCorrect || showReasons || isHardGAnimating || hardGHidden || isHardGFading) return;
     
     // Play buzzer sound when button moves
     playBuzzerSound();
@@ -217,13 +251,24 @@ function App() {
     const newMoveCount = moveCount + 1;
     setMoveCount(newMoveCount);
     
-    // Check if we've reached 20 moves - start soft G chasing
+    // Check if we've reached 20 moves - start fading and chasing
     if (newMoveCount >= 20) {
-      setHardGHidden(true);
-      setIsSoftGChasing(true);
-      setCurrentMessage("Fine! The correct answer will now chase you! 😤");
-      setShowMessage(true);
-      setTimeout(() => setShowMessage(false), 4000);
+      setIsHardGFading(true);
+      
+      // Start fade out animation
+      setTimeout(() => {
+        setHardGHidden(true);
+        
+        // Get the current position of the soft G button to start chasing from there
+        const softGButton = softGRef.current;
+        if (softGButton) {
+          const rect = softGButton.getBoundingClientRect();
+          setSoftGPosition({ x: rect.left, y: rect.top });
+        }
+        
+        setIsSoftGChasing(true);
+      }, 1000); // Wait for fade animation to complete
+      
       setTimeout(() => setIsHardGAnimating(false), 300);
       return;
     }
@@ -331,10 +376,14 @@ function App() {
     setMousePosition({ x: 0, y: 0 });
     setSoftGPosition({ x: 0, y: 0 });
     setIsSoftGChasing(false);
+    setIsHardGFading(false);
     
-    // Clear chase interval
+    // Clear intervals
     if (chaseIntervalRef.current) {
       clearInterval(chaseIntervalRef.current);
+    }
+    if (messageIntervalRef.current) {
+      clearInterval(messageIntervalRef.current);
     }
   };
 
@@ -377,7 +426,7 @@ function App() {
       {/* Messages */}
       {showMessage && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-          <div className={`${clickCount >= 5 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'} text-white px-6 py-3 rounded-full shadow-2xl border-2 border-white`}>
+          <div className={`${clickCount >= 5 || isSoftGChasing ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'} text-white px-6 py-3 rounded-full shadow-2xl border-2 border-white`}>
             <p className="text-lg font-bold text-center">{currentMessage}</p>
           </div>
         </div>
@@ -408,8 +457,8 @@ function App() {
                 className="group relative bg-white hover:bg-green-50 border-2 border-green-200 hover:border-green-400 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full max-w-xs touch-manipulation"
                 style={{
                   transform: `scale(${softGScale}) ${softGScale > 1 ? 'translateY(-20px)' : ''}`,
-                  zIndex: softGScale > 1 ? 30 : 'auto',
-                  transition: 'all 0.5s ease-out',
+                  zIndex: softGScale > 1 || isSoftGChasing ? 30 : 'auto',
+                  transition: isSoftGChasing ? 'none' : 'all 0.5s ease-out',
                   position: isSoftGChasing ? 'fixed' : 'relative',
                   left: isSoftGChasing ? `${softGPosition.x}px` : 'auto',
                   top: isSoftGChasing ? `${softGPosition.y}px` : 'auto'
@@ -420,12 +469,12 @@ function App() {
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">with a Soft G</h3>
                 <p className="text-gray-600 text-base">
-                  {hasMovedOnce ? '(like "GIF")' : '(like "Jif")'}
+                  (like "Jif")
                 </p>
                 <div className="absolute inset-0 bg-gradient-to-r from-green-200 to-emerald-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
               </button>
 
-              {/* Hard G Button - Hidden after 20 moves */}
+              {/* Hard G Button - Fades away after 20 moves */}
               {!hardGHidden && (
                 <button
                   ref={hardGRef}
@@ -439,7 +488,8 @@ function App() {
                     top: hardGPosition.y !== 0 ? `${hardGPosition.y}px` : 'auto',
                     zIndex: hardGPosition.x !== 0 || hardGPosition.y !== 0 ? 20 : 'auto',
                     transform: `scale(${hardGScale})`,
-                    transition: isHardGAnimating ? 'all 0.2s ease-out' : 'all 0.2s ease'
+                    transition: isHardGAnimating ? 'all 0.2s ease-out' : isHardGFading ? 'opacity 1s ease-out' : 'all 0.2s ease',
+                    opacity: isHardGFading ? 0 : 1
                   }}
                 >
                   <div className="flex items-center justify-center mb-3">
@@ -451,18 +501,6 @@ function App() {
                 </button>
               )}
             </div>
-
-            {/* Message when hard G is hidden and soft G is chasing */}
-            {hardGHidden && isSoftGChasing && (
-              <div className="mt-8 text-center animate-fade-in">
-                <p className="text-lg text-gray-600 mb-4">
-                  The correct answer is now chasing your cursor! 🏃‍♂️
-                </p>
-                <p className="text-base text-gray-500">
-                  You can run, but you can't hide from the truth! 😄
-                </p>
-              </div>
-            )}
           </>
         )}
 
