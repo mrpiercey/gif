@@ -133,7 +133,7 @@ function App() {
         setTimeout(() => {
           setShowCursor(false);
           handleSoftGClick();
-        }, 1500);
+        }, 6000);
       }, 100);
     }
   };
@@ -371,7 +371,7 @@ function App() {
       {/* Animated Cursor */}
       {showCursor && (
         <div 
-          className="fixed w-6 h-6 pointer-events-none z-50 transition-all duration-1500 ease-in-out"
+          className="fixed w-6 h-6 pointer-events-none z-50 transition-all duration-6000 ease-in-out"
           style={{
             left: `${cursorPosition.x - 12}px`,
             top: `${cursorPosition.y - 12}px`,
