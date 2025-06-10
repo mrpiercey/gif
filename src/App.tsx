@@ -17,6 +17,7 @@ function App() {
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const hardGRef = useRef<HTMLButtonElement>(null);
   const softGRef = useRef<HTMLButtonElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Audio refs for sound effects
   const bellSoundRef = useRef<HTMLAudioElement>(null);
@@ -85,6 +86,57 @@ function App() {
     "Technical documentation from the original development team at CompuServe consistently referenced the 'jif' pronunciation in internal memos.",
     "Steve Wilhite retired from his career having created one of the most important image formats in internet history - the least we can do is say it right!"
   ];
+
+  // Set up 2-minute timer when component mounts and isn't showing results
+  useEffect(() => {
+    if (!showCorrect && !showReasons) {
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Set 2-minute timeout
+      timeoutRef.current = setTimeout(() => {
+        triggerAutoCursor();
+      }, 120000); // 2 minutes = 120,000 milliseconds
+    }
+    
+    // Cleanup timeout on unmount or when showing results
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [showCorrect, showReasons]);
+
+  const triggerAutoCursor = () => {
+    if (showCorrect || showReasons) return;
+    
+    setShowCursor(true);
+    
+    // Get the soft G button position
+    const softGButton = softGRef.current;
+    if (softGButton) {
+      const rect = softGButton.getBoundingClientRect();
+      const targetX = rect.left + rect.width / 2;
+      const targetY = rect.top + rect.height / 2;
+      
+      // Always start cursor from the left edge
+      const startPos = { x: 0, y: window.innerHeight / 2 };
+      setCursorPosition(startPos);
+      
+      // Animate cursor to the soft G button
+      setTimeout(() => {
+        setCursorPosition({ x: targetX, y: targetY });
+        
+        // Click the button after cursor reaches it
+        setTimeout(() => {
+          setShowCursor(false);
+          handleSoftGClick();
+        }, 1500);
+      }, 100);
+    }
+  };
 
   // Sound effect functions
   const playBellSound = () => {
@@ -181,6 +233,11 @@ function App() {
   };
 
   const handleSoftGClick = () => {
+    // Clear the 2-minute timeout since they clicked the correct answer
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
     // Play delightful bell sound
     playBellSound();
     
@@ -210,37 +267,7 @@ function App() {
     
     // Auto-click the soft G button after 20 clicks
     if (newClickCount === 20) {
-      setShowCursor(true);
-      
-      // Get the soft G button position
-      const softGButton = softGRef.current;
-      if (softGButton) {
-        const rect = softGButton.getBoundingClientRect();
-        const targetX = rect.left + rect.width / 2;
-        const targetY = rect.top + rect.height / 2;
-        
-        // Start cursor from a random edge of the screen
-        const startPositions = [
-          { x: 0, y: window.innerHeight / 2 }, // Left edge
-          { x: window.innerWidth, y: window.innerHeight / 2 }, // Right edge
-          { x: window.innerWidth / 2, y: 0 }, // Top edge
-          { x: window.innerWidth / 2, y: window.innerHeight } // Bottom edge
-        ];
-        
-        const startPos = startPositions[Math.floor(Math.random() * startPositions.length)];
-        setCursorPosition(startPos);
-        
-        // Animate cursor to the soft G button
-        setTimeout(() => {
-          setCursorPosition({ x: targetX, y: targetY });
-          
-          // Click the button after cursor reaches it
-          setTimeout(() => {
-            setShowCursor(false);
-            handleSoftGClick();
-          }, 1500);
-        }, 100);
-      }
+      triggerAutoCursor();
       return;
     }
     
@@ -285,6 +312,11 @@ function App() {
   };
 
   const resetApp = () => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
     setShowCorrect(false);
     setShowReasons(false);
     setHardGPosition({ x: 0, y: 0 });
