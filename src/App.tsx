@@ -9,6 +9,7 @@ function App() {
   const [hasMovedOnce, setHasMovedOnce] = useState(false);
   const [isHardGAnimating, setIsHardGAnimating] = useState(false);
   const [clickCount, setClickCount] = useState(0);
+  const [moveCount, setMoveCount] = useState(0); // Track number of times button moves
   const [currentMessage, setCurrentMessage] = useState('');
   const [showMessage, setShowMessage] = useState(false);
   const [currentFunFact, setCurrentFunFact] = useState('');
@@ -212,6 +213,21 @@ function App() {
     
     setIsHardGAnimating(true);
     
+    // Increment move count each time the button actually moves
+    const newMoveCount = moveCount + 1;
+    setMoveCount(newMoveCount);
+    
+    // Check if we've reached 20 moves - start soft G chasing
+    if (newMoveCount >= 20) {
+      setHardGHidden(true);
+      setIsSoftGChasing(true);
+      setCurrentMessage("Fine! The correct answer will now chase you! 😤");
+      setShowMessage(true);
+      setTimeout(() => setShowMessage(false), 4000);
+      setTimeout(() => setIsHardGAnimating(false), 300);
+      return;
+    }
+    
     if (!hasMovedOnce) {
       // First time: shrink and move to safe position
       setHardGScale(0.5);
@@ -244,16 +260,6 @@ function App() {
     e.preventDefault();
     const newClickCount = clickCount + 1;
     setClickCount(newClickCount);
-    
-    // Hide hard G button after 20 clicks and start soft G chasing
-    if (newClickCount >= 20) {
-      setHardGHidden(true);
-      setIsSoftGChasing(true);
-      setCurrentMessage("Fine! The correct answer will now chase you! 😤");
-      setShowMessage(true);
-      setTimeout(() => setShowMessage(false), 4000);
-      return;
-    }
     
     // Show hint messages after 5 clicks
     if (newClickCount >= 5) {
@@ -316,6 +322,7 @@ function App() {
     setHasMovedOnce(false);
     setIsHardGAnimating(false);
     setClickCount(0);
+    setMoveCount(0); // Reset move count
     setCurrentMessage('');
     setShowMessage(false);
     setCurrentFunFact('');
@@ -418,7 +425,7 @@ function App() {
                 <div className="absolute inset-0 bg-gradient-to-r from-green-200 to-emerald-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
               </button>
 
-              {/* Hard G Button - Hidden after 20 clicks */}
+              {/* Hard G Button - Hidden after 20 moves */}
               {!hardGHidden && (
                 <button
                   ref={hardGRef}
