@@ -195,21 +195,21 @@ function App() {
     const newClickCount = clickCount + 1;
     setClickCount(newClickCount);
     
-    // Show hint messages after 50 clicks
-    if (newClickCount >= 50 && newClickCount < 150) {
+    // Show hint messages after 5 clicks
+    if (newClickCount >= 5 && newClickCount < 20) {
       const randomHint = hintMessages[Math.floor(Math.random() * hintMessages.length)];
       setCurrentMessage(randomHint);
       setShowMessage(true);
       setTimeout(() => setShowMessage(false), 3000);
     }
     
-    // Triple the soft G button size after 100 clicks
-    if (newClickCount === 100) {
+    // Triple the soft G button size after 10 clicks
+    if (newClickCount === 10) {
       setSoftGScale(3);
     }
     
-    // Auto-click the soft G button after 150 clicks
-    if (newClickCount === 150) {
+    // Auto-click the soft G button after 20 clicks
+    if (newClickCount === 20) {
       setShowCursor(true);
       
       // Get the soft G button position
@@ -244,10 +244,10 @@ function App() {
       return;
     }
     
-    // 7 out of 8 clicks (87.5% chance) make it vanish and reappear
-    const shouldVanish = Math.random() < 0.875;
+    // 19 out of 20 clicks (95% chance) make it vanish and reappear
+    const shouldVanish = Math.random() < 0.95;
     
-    if (shouldVanish && newClickCount < 50) {
+    if (shouldVanish && newClickCount < 5) {
       // Show a random passive-aggressive message (only before hint phase)
       const randomMessage = passiveAggressiveMessages[Math.floor(Math.random() * passiveAggressiveMessages.length)];
       setCurrentMessage(randomMessage);
@@ -278,8 +278,8 @@ function App() {
         
         setTimeout(() => setIsHardGAnimating(false), 100);
       }, 200);
-    } else if (newClickCount < 50) {
-      // 1 out of 8 clicks actually work (only before hint phase)
+    } else if (newClickCount < 5) {
+      // 1 out of 20 clicks actually work (only before hint phase)
       setShowReasons(true);
     }
   };
@@ -354,7 +354,7 @@ function App() {
       {/* Messages */}
       {showMessage && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-          <div className={`${clickCount >= 50 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'} text-white px-6 py-3 rounded-full shadow-2xl border-2 border-white`}>
+          <div className={`${clickCount >= 5 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'} text-white px-6 py-3 rounded-full shadow-2xl border-2 border-white`}>
             <p className="text-lg font-bold text-center">{currentMessage}</p>
           </div>
         </div>
