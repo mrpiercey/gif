@@ -1,24 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, CheckCircle, Lightbulb } from 'lucide-react';
+import { Volume2, CheckCircle, Lightbulb, Eye, Zap, Heart, Star, Crown, Gift, Music } from 'lucide-react';
 
 function App() {
   const [showCorrect, setShowCorrect] = useState(false);
   const [showReasons, setShowReasons] = useState(false);
-  const [hardGPosition, setHardGPosition] = useState({ x: 0, y: 0 });
-  const [hardGScale, setHardGScale] = useState(1);
-  const [hasMovedOnce, setHasMovedOnce] = useState(false);
-  const [isHardGAnimating, setIsHardGAnimating] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
-  const [moveCount, setMoveCount] = useState(0); // Track number of times button moves
+  const [currentTrick, setCurrentTrick] = useState<number | null>(null);
+  const [trickActive, setTrickActive] = useState(false);
   const [currentMessage, setCurrentMessage] = useState('');
   const [showMessage, setShowMessage] = useState(false);
   const [currentFunFact, setCurrentFunFact] = useState('');
+  const [clickCount, setClickCount] = useState(0);
+  
+  // Trick-specific states
+  const [hardGPosition, setHardGPosition] = useState({ x: 0, y: 0 });
+  const [hardGScale, setHardGScale] = useState(1);
   const [softGScale, setSoftGScale] = useState(1);
   const [hardGHidden, setHardGHidden] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [softGPosition, setSoftGPosition] = useState({ x: 0, y: 0 });
   const [isSoftGChasing, setIsSoftGChasing] = useState(false);
-  const [isHardGFading, setIsHardGFading] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
+  const [isRainbow, setIsRainbow] = useState(false);
+  const [showEyes, setShowEyes] = useState(false);
+  const [isInvisible, setIsInvisible] = useState(false);
+  const [showHearts, setShowHearts] = useState(false);
+  const [isGlowing, setIsGlowing] = useState(false);
+  const [showCrown, setShowCrown] = useState(false);
+  const [isFloating, setIsFloating] = useState(false);
+  
   const hardGRef = useRef<HTMLButtonElement>(null);
   const softGRef = useRef<HTMLButtonElement>(null);
   const chaseIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -28,45 +38,17 @@ function App() {
   const bellSoundRef = useRef<HTMLAudioElement>(null);
   const buzzerSoundRef = useRef<HTMLAudioElement>(null);
 
-  const passiveAggressiveMessages = [
-    "Ohh... so close! 🙄",
-    "Nice try, but no cigar 😏",
-    "Almost had it there, champ 🤭",
-    "Swing and a miss! ⚾",
-    "Better luck next time, sport 😌",
-    "Oopsie! Missed again 🤷‍♀️",
-    "So very close... not really though 😂",
-    "Keep dreaming, buttercup 💭",
-    "Nope! Try harder next time 💪",
-    "Aww, that's adorable 🥺",
-    "Getting warmer... just kidding! 🔥",
-    "You're really trying, aren't you? 😅",
-    "Bless your heart for trying 💝",
-    "Maybe next century? ⏰",
-    "Points for persistence, I guess 🏆"
-  ];
-
-  const hintMessages = [
-    "Why don't you try clicking the right answer?",
-    "Maybe the other button would work better? 🤔",
-    "Psst... there's another option over there 👉",
-    "Have you considered the green button? 💚",
-    "The correct answer is literally right there...",
-    "I'm starting to feel bad for you 😅",
-    "The soft G button is looking pretty lonely...",
-    "Your persistence is admirable, but misguided 🎯",
-    "Perhaps it's time to try a different strategy?",
-    "The definition of insanity is... well, this 🤪",
-    "I believe in you! Try the other button! 💪",
-    "Plot twist: maybe try the correct answer?",
-    "The green button has been waiting patiently...",
-    "Hint: Steve Wilhite would be disappointed 😔",
-    "Maybe listen to the creator of the format? 🤷‍♀️",
-    "The soft G button is the friend you need 🤝",
-    "I'm rooting for you to make the right choice!",
-    "Time to swallow your pride and click correctly?",
-    "The universe is trying to tell you something...",
-    "Your stubbornness is both impressive and concerning 😂"
+  const trickMessages = [
+    "🎪 Welcome to the GIF Pronunciation Circus! 🎪",
+    "🎭 Time for some pronunciation theater! 🎭",
+    "🎨 Let's paint the town with correct pronunciation! 🎨",
+    "🎵 It's time for the pronunciation dance! 🎵",
+    "🎯 Target acquired: Correct pronunciation! 🎯",
+    "🎪 Step right up to the pronunciation show! 🎪",
+    "🎨 Art attack: Pronunciation edition! 🎨",
+    "🎭 Drama time: The GIF pronunciation saga! 🎭",
+    "🎵 Musical chairs, but with pronunciation! 🎵",
+    "🎪 The greatest pronunciation show on earth! 🎪"
   ];
 
   const chaseMessages = [
@@ -93,20 +75,10 @@ function App() {
     "The soft G pronunciation was intentional from day one - Wilhite wanted it to sound like the popular peanut butter brand.",
     "Major dictionaries like Merriam-Webster and Oxford list the soft G pronunciation as the primary option.",
     "Steve Wilhite has given countless interviews over the decades, always correcting people who say it with a hard G.",
-    "The creator's intent matters - when someone invents something, they get to decide how it's pronounced. It's basic respect for intellectual property.",
-    "Even the original GIF specification documentation from 1987 included pronunciation guidance suggesting the soft G.",
-    "Linguistic experts note that English borrowed many soft G patterns from French, where 'gi' combinations typically use the soft sound.",
-    "The acronym expansion 'Graphics Interchange Format' doesn't dictate pronunciation - we don't say 'jfeg' for JPEG despite 'photographic.'",
-    "Steve Wilhite received the Webby Lifetime Achievement Award partly for creating GIF, and he used that platform to educate people on pronunciation.",
-    "Early computer magazines and tech publications in the late 80s and early 90s consistently used the soft G pronunciation in their articles.",
-    "The soft G pronunciation has been the standard in professional graphics and web development communities since the format's inception.",
-    "Wilhite has stated in interviews that he's 'amazed' the debate even exists, since he's been clear about the pronunciation from the beginning.",
-    "The GIF format revolutionized early internet culture, and respecting its creator's pronunciation wishes is part of honoring that legacy.",
-    "Technical documentation from the original development team at CompuServe consistently referenced the 'jif' pronunciation in internal memos.",
-    "Steve Wilhite retired from his career having created one of the most important image formats in internet history - the least we can do is say it right!"
+    "The creator's intent matters - when someone invents something, they get to decide how it's pronounced. It's basic respect for intellectual property."
   ];
 
-  // Track mouse position
+  // Track mouse position for chasing trick
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
@@ -126,15 +98,13 @@ function App() {
     if (isSoftGChasing && !showCorrect && !showReasons) {
       chaseIntervalRef.current = setInterval(() => {
         setSoftGPosition(prevPos => {
-          const dx = mousePosition.x - (prevPos.x + 150); // 150 is roughly half button width
-          const dy = mousePosition.y - (prevPos.y + 50); // 50 is roughly half button height
+          const dx = mousePosition.x - (prevPos.x + 150);
+          const dy = mousePosition.y - (prevPos.y + 50);
           
-          // Move slowly towards cursor (10% of the distance each frame)
           const speed = 0.1;
           const newX = prevPos.x + (dx * speed);
           const newY = prevPos.y + (dy * speed);
           
-          // Keep button within screen bounds
           const maxX = window.innerWidth - 300;
           const maxY = window.innerHeight - 100;
           
@@ -143,7 +113,7 @@ function App() {
             y: Math.max(0, Math.min(maxY, newY))
           };
         });
-      }, 50); // Update every 50ms for smooth movement
+      }, 50);
     }
 
     return () => {
@@ -161,7 +131,7 @@ function App() {
         setCurrentMessage(randomMessage);
         setShowMessage(true);
         setTimeout(() => setShowMessage(false), 4000);
-      }, 10000); // Show message every 10 seconds
+      }, 10000);
     }
 
     return () => {
@@ -174,128 +144,175 @@ function App() {
   // Sound effect functions
   const playBellSound = () => {
     if (bellSoundRef.current) {
-      bellSoundRef.current.currentTime = 0; // Reset to start
+      bellSoundRef.current.currentTime = 0;
       bellSoundRef.current.play().catch(e => console.log('Bell sound failed to play:', e));
     }
   };
 
   const playBuzzerSound = () => {
     if (buzzerSoundRef.current) {
-      buzzerSoundRef.current.currentTime = 0; // Reset to start
+      buzzerSoundRef.current.currentTime = 0;
       buzzerSoundRef.current.play().catch(e => console.log('Buzzer sound failed to play:', e));
     }
   };
 
-  // Check if two rectangles overlap
-  const checkOverlap = (rect1: DOMRect, rect2: DOMRect) => {
-    return !(rect1.right < rect2.left || 
-             rect1.left > rect2.right || 
-             rect1.bottom < rect2.top || 
-             rect1.top > rect2.bottom);
-  };
-
-  // Get a safe position that doesn't overlap with the soft G button
-  const getSafePosition = () => {
-    const maxAttempts = 50;
-    let attempts = 0;
+  // Execute random trick
+  const executeRandomTrick = () => {
+    if (trickActive) return;
     
-    while (attempts < maxAttempts) {
-      const newX = Math.random() * (window.innerWidth - 200);
-      const newY = Math.random() * (window.innerHeight - 100);
-      
-      // Create a test rectangle for the new position
-      const testRect = {
-        left: newX,
-        top: newY,
-        right: newX + 200, // Approximate button width
-        bottom: newY + 100 // Approximate button height
-      } as DOMRect;
-      
-      // Get soft G button position
-      const softGButton = softGRef.current;
-      if (softGButton) {
-        const softGRect = softGButton.getBoundingClientRect();
-        
-        // Add some padding to avoid being too close
-        const paddedSoftGRect = {
-          left: softGRect.left - 50,
-          top: softGRect.top - 50,
-          right: softGRect.right + 50,
-          bottom: softGRect.bottom + 50
-        } as DOMRect;
-        
-        if (!checkOverlap(testRect, paddedSoftGRect)) {
-          return { x: newX, y: newY };
-        }
-      } else {
-        // If soft G button not found, just return the position
-        return { x: newX, y: newY };
-      }
-      
-      attempts++;
-    }
+    const trickNumber = Math.floor(Math.random() * 10) + 1;
+    setCurrentTrick(trickNumber);
+    setTrickActive(true);
     
-    // Fallback: place it at the top right corner
-    return { x: window.innerWidth - 250, y: 50 };
-  };
-
-  const moveHardGButton = () => {
-    if (showCorrect || showReasons || isHardGAnimating || hardGHidden || isHardGFading) return;
+    // Show trick message
+    const randomMessage = trickMessages[Math.floor(Math.random() * trickMessages.length)];
+    setCurrentMessage(randomMessage);
+    setShowMessage(true);
+    setTimeout(() => setShowMessage(false), 3000);
     
-    // Play buzzer sound when button moves
     playBuzzerSound();
     
-    setIsHardGAnimating(true);
-    
-    // Increment move count each time the button actually moves
-    const newMoveCount = moveCount + 1;
-    setMoveCount(newMoveCount);
-    
-    // Check if we've reached 20 moves - start fading and chasing
-    if (newMoveCount >= 20) {
-      setIsHardGFading(true);
-      
-      // Start fade out animation
-      setTimeout(() => {
-        setHardGHidden(true);
-        
-        // Get the current position of the soft G button to start chasing from there
-        const softGButton = softGRef.current;
-        if (softGButton) {
-          const rect = softGButton.getBoundingClientRect();
-          setSoftGPosition({ x: rect.left, y: rect.top });
-        }
-        
-        setIsSoftGChasing(true);
-      }, 1000); // Wait for fade animation to complete
-      
-      setTimeout(() => setIsHardGAnimating(false), 300);
-      return;
+    switch (trickNumber) {
+      case 1: // Button slides around screen
+        slideButtonAround();
+        break;
+      case 2: // Soft G button chases cursor
+        startCursorChase();
+        break;
+      case 3: // Hard G button spins uncontrollably
+        spinHardGButton();
+        break;
+      case 4: // Hard G button shakes violently
+        shakeHardGButton();
+        break;
+      case 5: // Soft G button becomes rainbow colored
+        makeRainbowSoftG();
+        break;
+      case 6: // Eyes appear watching the user
+        showWatchingEyes();
+        break;
+      case 7: // Hard G button becomes nearly invisible
+        makeHardGInvisible();
+        break;
+      case 8: // Hearts float around soft G button
+        showFloatingHearts();
+        break;
+      case 9: // Soft G button glows and pulses
+        makeGlowingSoftG();
+        break;
+      case 10: // Crown appears on soft G button
+        crownTheSoftG();
+        break;
     }
-    
-    if (!hasMovedOnce) {
-      // First time: shrink and move to safe position
-      setHardGScale(0.5);
-      setHasMovedOnce(true);
+  };
+
+  // Trick implementations
+  const slideButtonAround = () => {
+    let moveCount = 0;
+    const moveInterval = setInterval(() => {
+      const newX = Math.random() * (window.innerWidth - 200);
+      const newY = Math.random() * (window.innerHeight - 100);
+      setHardGPosition({ x: newX, y: newY });
+      setHardGScale(0.5 + Math.random() * 0.5);
       
-      const safePosition = getSafePosition();
-      setHardGPosition(safePosition);
-      
-      setTimeout(() => setIsHardGAnimating(false), 300);
-    } else {
-      // After first time: just slide around quickly to safe positions
-      const safePosition = getSafePosition();
-      setHardGPosition(safePosition);
-      
-      setTimeout(() => setIsHardGAnimating(false), 150);
+      moveCount++;
+      if (moveCount >= 15) {
+        clearInterval(moveInterval);
+        setTimeout(() => setTrickActive(false), 1000);
+      }
+    }, 500);
+  };
+
+  const startCursorChase = () => {
+    setIsSoftGChasing(true);
+    const softGButton = softGRef.current;
+    if (softGButton) {
+      const rect = softGButton.getBoundingClientRect();
+      setSoftGPosition({ x: rect.left, y: rect.top });
     }
+    setTimeout(() => {
+      setIsSoftGChasing(false);
+      setSoftGPosition({ x: 0, y: 0 });
+      setTrickActive(false);
+    }, 15000);
+  };
+
+  const spinHardGButton = () => {
+    setIsSpinning(true);
+    setTimeout(() => {
+      setIsSpinning(false);
+      setTrickActive(false);
+    }, 8000);
+  };
+
+  const shakeHardGButton = () => {
+    setIsShaking(true);
+    setTimeout(() => {
+      setIsShaking(false);
+      setTrickActive(false);
+    }, 6000);
+  };
+
+  const makeRainbowSoftG = () => {
+    setIsRainbow(true);
+    setSoftGScale(1.5);
+    setTimeout(() => {
+      setIsRainbow(false);
+      setSoftGScale(1);
+      setTrickActive(false);
+    }, 10000);
+  };
+
+  const showWatchingEyes = () => {
+    setShowEyes(true);
+    setTimeout(() => {
+      setShowEyes(false);
+      setTrickActive(false);
+    }, 12000);
+  };
+
+  const makeHardGInvisible = () => {
+    setIsInvisible(true);
+    setTimeout(() => {
+      setIsInvisible(false);
+      setTrickActive(false);
+    }, 8000);
+  };
+
+  const showFloatingHearts = () => {
+    setShowHearts(true);
+    setSoftGScale(1.3);
+    setTimeout(() => {
+      setShowHearts(false);
+      setSoftGScale(1);
+      setTrickActive(false);
+    }, 10000);
+  };
+
+  const makeGlowingSoftG = () => {
+    setIsGlowing(true);
+    setSoftGScale(1.4);
+    setTimeout(() => {
+      setIsGlowing(false);
+      setSoftGScale(1);
+      setTrickActive(false);
+    }, 8000);
+  };
+
+  const crownTheSoftG = () => {
+    setShowCrown(true);
+    setSoftGScale(1.2);
+    setIsFloating(true);
+    setTimeout(() => {
+      setShowCrown(false);
+      setSoftGScale(1);
+      setIsFloating(false);
+      setTrickActive(false);
+    }, 12000);
   };
 
   const handleSoftGClick = () => {
-    // Play delightful bell sound
     playBellSound();
-    
-    // Select a random fun fact
     const randomFact = funFacts[Math.floor(Math.random() * funFacts.length)];
     setCurrentFunFact(randomFact);
     setShowCorrect(true);
@@ -306,77 +323,39 @@ function App() {
     const newClickCount = clickCount + 1;
     setClickCount(newClickCount);
     
-    // Show hint messages after 5 clicks
-    if (newClickCount >= 5) {
-      const randomHint = hintMessages[Math.floor(Math.random() * hintMessages.length)];
-      setCurrentMessage(randomHint);
-      setShowMessage(true);
-      setTimeout(() => setShowMessage(false), 3000);
-    }
-    
-    // Triple the soft G button size after 10 clicks
-    if (newClickCount === 10) {
-      setSoftGScale(3);
-    }
-    
-    // 19 out of 20 clicks (95% chance) make it vanish and reappear
-    const shouldVanish = Math.random() < 0.95;
-    
-    if (shouldVanish && newClickCount < 5) {
-      // Show a random passive-aggressive message (only before hint phase)
-      const randomMessage = passiveAggressiveMessages[Math.floor(Math.random() * passiveAggressiveMessages.length)];
-      setCurrentMessage(randomMessage);
-      setShowMessage(true);
-      
-      // Hide message after 2 seconds
-      setTimeout(() => setShowMessage(false), 2000);
-      
-      // Make button vanish and reappear elsewhere
-      setIsHardGAnimating(true);
-      
-      // Brief vanish effect
-      const button = hardGRef.current;
-      if (button) {
-        button.style.opacity = '0';
-        button.style.transform = `scale(${hardGScale * 0.1})`;
-      }
-      
-      setTimeout(() => {
-        // Reappear at safe location
-        const safePosition = getSafePosition();
-        setHardGPosition(safePosition);
-        
-        if (button) {
-          button.style.opacity = '1';
-          button.style.transform = `scale(${hardGScale})`;
-        }
-        
-        setTimeout(() => setIsHardGAnimating(false), 100);
-      }, 200);
-    } else if (newClickCount < 5) {
-      // 1 out of 20 clicks actually work (only before hint phase)
-      setShowReasons(true);
+    // Execute random trick after 3 clicks
+    if (newClickCount >= 3 && !trickActive) {
+      executeRandomTrick();
     }
   };
 
   const resetApp = () => {
     setShowCorrect(false);
     setShowReasons(false);
-    setHardGPosition({ x: 0, y: 0 });
-    setHardGScale(1);
-    setHasMovedOnce(false);
-    setIsHardGAnimating(false);
-    setClickCount(0);
-    setMoveCount(0); // Reset move count
+    setCurrentTrick(null);
+    setTrickActive(false);
     setCurrentMessage('');
     setShowMessage(false);
     setCurrentFunFact('');
+    setClickCount(0);
+    
+    // Reset all trick states
+    setHardGPosition({ x: 0, y: 0 });
+    setHardGScale(1);
     setSoftGScale(1);
     setHardGHidden(false);
     setMousePosition({ x: 0, y: 0 });
     setSoftGPosition({ x: 0, y: 0 });
     setIsSoftGChasing(false);
-    setIsHardGFading(false);
+    setIsSpinning(false);
+    setIsShaking(false);
+    setIsRainbow(false);
+    setShowEyes(false);
+    setIsInvisible(false);
+    setShowHearts(false);
+    setIsGlowing(false);
+    setShowCrown(false);
+    setIsFloating(false);
     
     // Clear intervals
     if (chaseIntervalRef.current) {
@@ -406,13 +385,11 @@ function App() {
       <audio ref={bellSoundRef} preload="auto">
         <source src="/sounds/bell.mp3" type="audio/mpeg" />
         <source src="/sounds/bell.wav" type="audio/wav" />
-        {/* Fallback for browsers that don't support audio */}
       </audio>
       
       <audio ref={buzzerSoundRef} preload="auto">
         <source src="/sounds/buzzer.mp3" type="audio/mpeg" />
         <source src="/sounds/buzzer.wav" type="audio/wav" />
-        {/* Fallback for browsers that don't support audio */}
       </audio>
 
       {/* Background Pattern */}
@@ -423,10 +400,34 @@ function App() {
         <div className="absolute bottom-40 right-1/3 w-8 h-8 bg-blue-400 rounded-full animate-pulse"></div>
       </div>
 
+      {/* Watching Eyes */}
+      {showEyes && (
+        <div className="fixed inset-0 pointer-events-none z-40">
+          <Eye className="absolute top-20 left-20 w-16 h-16 text-red-500 animate-pulse" />
+          <Eye className="absolute top-32 right-32 w-12 h-12 text-blue-500 animate-bounce" />
+          <Eye className="absolute bottom-40 left-40 w-14 h-14 text-green-500 animate-ping" />
+          <Eye className="absolute bottom-20 right-20 w-10 h-10 text-purple-500 animate-pulse" />
+          <Eye className="absolute top-1/2 left-10 w-8 h-8 text-yellow-500 animate-bounce" />
+          <Eye className="absolute top-1/3 right-10 w-12 h-12 text-pink-500 animate-ping" />
+        </div>
+      )}
+
+      {/* Floating Hearts */}
+      {showHearts && (
+        <div className="fixed inset-0 pointer-events-none z-30">
+          <Heart className="absolute top-20 left-1/4 w-8 h-8 text-red-400 animate-bounce" style={{ animationDelay: '0s' }} />
+          <Heart className="absolute top-40 right-1/4 w-6 h-6 text-pink-400 animate-bounce" style={{ animationDelay: '0.5s' }} />
+          <Heart className="absolute bottom-40 left-1/3 w-10 h-10 text-red-500 animate-bounce" style={{ animationDelay: '1s' }} />
+          <Heart className="absolute bottom-60 right-1/3 w-7 h-7 text-pink-500 animate-bounce" style={{ animationDelay: '1.5s' }} />
+          <Heart className="absolute top-1/2 left-20 w-5 h-5 text-red-300 animate-bounce" style={{ animationDelay: '2s' }} />
+          <Heart className="absolute top-1/3 right-20 w-9 h-9 text-pink-300 animate-bounce" style={{ animationDelay: '2.5s' }} />
+        </div>
+      )}
+
       {/* Messages */}
       {showMessage && (
         <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-          <div className={`${clickCount >= 5 || isSoftGChasing ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'} text-white px-6 py-3 rounded-full shadow-2xl border-2 border-white`}>
+          <div className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-6 py-3 rounded-full shadow-2xl border-2 border-white">
             <p className="text-lg font-bold text-center">{currentMessage}</p>
           </div>
         </div>
@@ -454,49 +455,56 @@ function App() {
               <button
                 ref={softGRef}
                 onClick={handleSoftGClick}
-                className="group relative bg-white hover:bg-green-50 border-2 border-green-200 hover:border-green-400 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full max-w-xs touch-manipulation"
+                className={`group relative bg-white hover:bg-green-50 border-2 border-green-200 hover:border-green-400 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full max-w-xs touch-manipulation ${
+                  isRainbow ? 'animate-pulse bg-gradient-to-r from-red-200 via-yellow-200 via-green-200 via-blue-200 to-purple-200' : ''
+                } ${isGlowing ? 'shadow-2xl shadow-green-400/50 bg-green-50' : ''} ${isFloating ? 'animate-bounce' : ''}`}
                 style={{
                   transform: `scale(${softGScale}) ${softGScale > 1 ? 'translateY(-20px)' : ''}`,
                   zIndex: softGScale > 1 || isSoftGChasing ? 30 : 'auto',
                   transition: isSoftGChasing ? 'none' : 'all 0.5s ease-out',
                   position: isSoftGChasing ? 'fixed' : 'relative',
                   left: isSoftGChasing ? `${softGPosition.x}px` : 'auto',
-                  top: isSoftGChasing ? `${softGPosition.y}px` : 'auto'
+                  top: isSoftGChasing ? `${softGPosition.y}px` : 'auto',
+                  boxShadow: isGlowing ? '0 0 30px rgba(34, 197, 94, 0.6), 0 0 60px rgba(34, 197, 94, 0.4)' : undefined
                 }}
               >
+                {showCrown && (
+                  <Crown className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-12 h-12 text-yellow-500 animate-bounce" />
+                )}
                 <div className="flex items-center justify-center mb-3">
-                  <Volume2 className="w-8 h-8 text-green-600 group-hover:animate-bounce" />
+                  <Volume2 className={`w-8 h-8 text-green-600 group-hover:animate-bounce ${isGlowing ? 'animate-pulse' : ''}`} />
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">with a Soft G</h3>
                 <p className="text-gray-600 text-base">
-                  (like "Jif")
+                  (like "JIF")
                 </p>
                 <div className="absolute inset-0 bg-gradient-to-r from-green-200 to-emerald-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
               </button>
 
-              {/* Hard G Button - Fades away after 20 moves */}
+              {/* Hard G Button */}
               {!hardGHidden && (
                 <button
                   ref={hardGRef}
-                  onMouseEnter={moveHardGButton}
-                  onTouchStart={moveHardGButton}
                   onClick={handleHardGClick}
-                  className="group relative bg-white hover:bg-red-50 border-2 border-red-200 hover:border-red-400 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-200 transform hover:scale-105 w-full max-w-xs touch-manipulation"
+                  className={`group relative bg-white hover:bg-red-50 border-2 border-red-200 hover:border-red-400 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-200 transform hover:scale-105 w-full max-w-xs touch-manipulation ${
+                    isSpinning ? 'animate-spin' : ''
+                  } ${isShaking ? 'animate-pulse' : ''}`}
                   style={{
                     position: hardGPosition.x !== 0 || hardGPosition.y !== 0 ? 'fixed' : 'relative',
                     left: hardGPosition.x !== 0 ? `${hardGPosition.x}px` : 'auto',
                     top: hardGPosition.y !== 0 ? `${hardGPosition.y}px` : 'auto',
                     zIndex: hardGPosition.x !== 0 || hardGPosition.y !== 0 ? 20 : 'auto',
-                    transform: `scale(${hardGScale})`,
-                    transition: isHardGAnimating ? 'all 0.2s ease-out' : isHardGFading ? 'opacity 1s ease-out' : 'all 0.2s ease',
-                    opacity: isHardGFading ? 0 : 1
+                    transform: `scale(${hardGScale}) ${isShaking ? 'translateX(-2px)' : ''}`,
+                    transition: isSpinning ? 'transform 0.1s linear' : 'all 0.2s ease',
+                    opacity: isInvisible ? 0.1 : 1,
+                    animation: isShaking ? 'shake 0.1s infinite' : undefined
                   }}
                 >
                   <div className="flex items-center justify-center mb-3">
                     <Volume2 className="w-8 h-8 text-red-600 group-hover:animate-bounce" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-800 mb-2">with a Hard G</h3>
-                  <p className="text-gray-600 text-base">(like "Gig")</p>
+                  <p className="text-gray-600 text-base">(like "GIG")</p>
                   <div className="absolute inset-0 bg-gradient-to-r from-red-200 to-pink-200 opacity-0 group-hover:opacity-20 rounded-2xl transition-opacity duration-300"></div>
                 </button>
               )}
@@ -513,7 +521,7 @@ function App() {
                 That's Correct!
               </h1>
               <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-2xl mx-auto leading-relaxed">
-                GIF is pronounced with a <span className="font-bold text-green-600">soft G</span>, just like "Jif" peanut butter. 
+                GIF is pronounced with a <span className="font-bold text-green-600">soft G</span>, just like "JIF" peanut butter. 
                 The creator himself, Steve Wilhite, confirmed this pronunciation!
               </p>
             </div>
@@ -543,7 +551,7 @@ function App() {
             <div className="mb-8">
               <h1 className="text-3xl md:text-5xl font-bold text-gray-800 mb-6">
                 Actually, here's why it's pronounced 
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600"> "Jif"</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600"> "JIF"</span>
               </h1>
               <p className="text-lg md:text-xl text-gray-600 mb-8">
                 Since you managed to click that elusive button, here are the facts:
@@ -614,6 +622,12 @@ function App() {
           50% {
             background-position: 100% 50%;
           }
+        }
+        
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
         }
         
         .animate-fade-in {
